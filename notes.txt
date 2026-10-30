@@ -1,0 +1,4 @@
+Learned that pysindy could run pdes!
+Using scipy to simulate differential equations
+Using Explicit Runge-Kutta method of order 5(4) to simulate the system
+    - To use this, we have to estimate from the start what the population of resistant and sensitive cells are
