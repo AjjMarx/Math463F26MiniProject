@@ -47,4 +47,4 @@ Comparison to the original equations
         (S)' = 0.088 S - 0.797 S*(1-exp(-0.01*t))
         (R)' = 0.112 S*(1-exp(-0.01*t))
 
-Github Copilot was used to reformant and fix errors in the code. However, most of the code's skeloton was written by humans, and AI was used to reformat and debug.
+Github Copilot was used to reformant and fix errors in the code. However, most of the code's skeloton was written by humans, and AI was used to reformat and debug. Copilot was also used to help graph and plot data from the original file.
