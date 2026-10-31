@@ -1,59 +1,172 @@
 import numpy as np
-import pandas as pd
-import matplotlib as mplt
 import pysindy as ps
-import matplotlib.pyplot as plt
-from scipy.integrate import itg
-import math
+from scipy.integrate import solve_ivp
 
-def loadData(file: str) -> np.NDArray:
-    return pd.read_excel(file).to_numpy()
 
-#define our cell system model for simulation
-def cellSystem(t, x):
-    #model parameters
-    r_s = 1
-    r_R = 1
-    d_s = 1
-    d_R = 1
-    a_1 = 1
-    delay_1 = 1
-    delay_2 = 1
+# Model parameters assigned by drug concentration (μM): 0.032, 0.32, 3.2
 
-    #dS equation. (x1)
-    dx1_dt = r_s * x1 * d_s * (1-math.e ** -(delay_1 * t)) * x1 - a_1 (1 - math.e ** - (delay_2*t)) * x1
-    #dR equation (x2)
-    dx2_dt = r_R * x2 + a_1(1 - math.e ** -(delay_2 * t)) * x1 - d_R(1-e^-(delay_1 * t)) * x2
-    return [dx1_dt, dx2_dt]
+PARAMETERS = {
+    0.032: {
+        "R_S": 0.0532,
+        "R_R": 0.0532,
+        "D_S": 0.1855,
+        "D_R": 0.0751,
+        "ALPHA": 0.2520,
+        "GAMMA_1": 0.01,
+        "GAMMA_2": 0.01,
+    },
+    0.32: {
+        "R_S": 0.0722,
+        "R_R": 0.0415,
+        "D_S": 0.4012,
+        "D_R": 0.0699,
+        "ALPHA": 0.1963,
+        "GAMMA_1": 0.01,
+        "GAMMA_2": 0.01,
+    },
+    3.2: {
+        "R_S": 0.0880,
+        "R_R": 0.0070,
+        "D_S": 0.6924,
+        "D_R": 0.0137,
+        "ALPHA": 0.1048,
+        "GAMMA_1": 0.01,
+        "GAMMA_2": 0.01,
+    },
+}
 
-def simulateSystem():
-    solver = itg.RK45(cellSystem, 0, [0.25,0.25], 5000, max_step=0.05)
-    soly = solver.y.reshape(1, 2)
-    #run 2000 steps on the solver
-    for i in range(2000):
-        solver.step()
-        solyn = solver.y.reshape(1, 2)
-        soly = np.concatenate((soly, solyn))
+# Select drug concentration
+DRUG_CONCENTRATION = 0.32
 
-def main():
-    dt = loadData("pcbi.1007688.s007.xlsx")
-    print(dt)
+# Assign corresponding model parameters
+params = PARAMETERS[DRUG_CONCENTRATION]
 
-    #Pysindy Settings
-    differentiation_method = ps.FiniteDifference(order=2)
-    feature_library = ps.PolynomialLibrary(degree=3)
+#Sensitive Growth
+R_S = params["R_S"]
+#Resistant Growth
+R_R = params["R_R"]
+#Rate of sensitive death for drug at full effect
+D_S = params["D_S"]
+#Rate of resistant death for drug at full effect
+D_R = params["D_R"]
+#Rate of change from sensitive to resistant
+ALPHA = params["ALPHA"]
+#Speed of drug killing effect
+GAMMA_1 = params["GAMMA_1"]
+#Speed of drug resistant inducing effect
+GAMMA_2 = params["GAMMA_2"]
 
-    #Cut off threshold for terms
-    optimizer = ps.STLSQ(threshold=0.1)
+# Editable simulation settings. Using original paper's time
+INITIAL_STATE = np.array([1, 0], dtype=float)
+START_TIME = 0.0
+END_TIME = 100.0
+TIME_STEP = 0.01
+
+def cell_system(t: float, state: np.ndarray) -> np.ndarray:
+    """Return dS/dt and dR/dt for the cell model."""
+    susceptible, resistant = state
+    transfer_rate = ALPHA * (1.0 - np.exp(-GAMMA_2 * t))
+    susceptible_death = D_S * (1.0 - np.exp(-GAMMA_1 * t))
+    resistant_death = D_R * (1.0 - np.exp(-GAMMA_1 * t))
+
+    d_susceptible = R_S * susceptible - susceptible_death * susceptible - transfer_rate * susceptible
+    d_resistant = R_R * resistant + transfer_rate * susceptible - resistant_death * resistant
+    return np.array([d_susceptible, d_resistant])
+
+def simulate_system() -> tuple[np.ndarray, np.ndarray]:
+    """Simulate the model on a uniform time grid for SINDy."""
+    time = np.arange(START_TIME, END_TIME + TIME_STEP / 2.0, TIME_STEP)
+    solution = solve_ivp(
+        cell_system,
+        (START_TIME, END_TIME),
+        INITIAL_STATE,
+        t_eval=time,
+        method="RK45",
+    )
+    if not solution.success:
+        raise RuntimeError(f"ODE integration failed: {solution.message}")
+    return solution.t, solution.y.T
+
+def fit_sindy_model(time: np.ndarray, data: np.ndarray) -> ps.SINDy:
+    """Identify cell dynamics using a custom library of candidate functions."""
+
+    # Candidate delay rates (h^-1)
+    rates = [0.001, 0.01, 0.1]
+
+    # Each feature receives S, R, and t, in that order.
+    library_functions = [
+        lambda s, r, t: s,
+        lambda s, r, t: r,
+    ]
+
+    function_names = [
+        lambda s, r, t: s,
+        lambda s, r, t: r,
+    ]
+
+    # Create candidate exponential terms for both populations.
+    for gamma in rates:
+
+        def make_feature(g, population):
+            if population == "S":
+                return lambda s, r, t: s * (1 - np.exp(-g * t))
+            else:
+                return lambda s, r, t: r * (1 - np.exp(-g * t))
+
+        def make_name(g, population):
+            return lambda s, r, t: (
+                f"{population}*(1-exp(-{g}*t))"
+            )
+
+        for population in ["S", "R"]:
+            library_functions.append(
+                make_feature(gamma, population)
+            )
+            function_names.append(
+                make_name(gamma, population)
+            )
+
+    # Custom candidate function library
+    library = ps.CustomLibrary(
+        library_functions=library_functions,
+        function_names=function_names,
+        include_bias=False
+    )
 
     model = ps.SINDy(
-        differentiation_method=differentiation_method,
-        feature_library=feature_library,
-        optimizer=optimizer,
+        feature_library=library,
+        differentiation_method=ps.FiniteDifference(order=2),
+        optimizer=ps.STLSQ(
+            threshold=0.5,
+            alpha=1e-8,
+            normalize_columns=True
+        )
     )
-    
-    #Fit pysindy model to data
-    model.fit(X, t=t, feature_names=["x", "y"])
 
-    #Print fit model equations
+    # Time is supplied as an external input, not a state.
+    model.fit(
+        data,
+        t=time,
+        u=time.reshape(-1, 1),
+        feature_names=["S", "R", "t"]
+    )
+
+    print("\nCandidate functions:")
+    for name in model.get_feature_names():
+        print(name)
+
+    return model
+
+def main() -> None:
+    time, data = simulate_system()
+    model = fit_sindy_model(time, data)
+
+    print(f"Simulated {len(time)} time points from {time[0]:g} to {time[-1]:g}.")
+    print(f"Initial state: S={data[0, 0]:.3f}, R={data[0, 1]:.3f}")
+    print(f"Final state: S={data[-1, 0]:.3f}, R={data[-1, 1]:.3f}")
+    print("\nSINDy model:")
     model.print()
+
+
+if __name__ == "__main__":
+    main()

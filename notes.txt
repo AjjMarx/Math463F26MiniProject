@@ -2,3 +2,24 @@ Learned that pysindy could run pdes!
 Using scipy to simulate differential equations
 Using Explicit Runge-Kutta method of order 5(4) to simulate the system
     - To use this, we have to estimate from the start what the population of resistant and sensitive cells are
+
+Simulated function:
+    Three dosages from paper: 0.032, 0.32, 3.2
+    Parameters for the model were taken from the paper which was expiremental fitting
+
+Initially Sindy was choosing too many functions
+    - Had to increase the model cut off from 0.005 to 0.05
+    At threshold 0.005:
+        SINDy model:
+            (S)' =  0.072 S +  0.018 R + -0.360 S*(1-exp(-0.001*t)) +  0.003 R*(1-exp(-0.001*t)) + -0.559 S*(1-exp(-0.01*t)) + -0.001 S*(1-exp(-0.1*t)) + -0.018 R*(1-exp(-0.1*t))
+            (R)' =  0.032 R +  0.150 S*(1-exp(-0.001*t)) +  0.181 S*(1-exp(-0.01*t)) + -0.070 R*(1-exp(-0.01*t)) +  0.001 S*(1-exp(-0.1*t)) +  0.010 R*(1-exp(-0.1*t))
+    At threshold 0.05:
+        SINDy model:
+            (S)' =  0.072 S +  0.018 R + -0.360 S*(1-exp(-0.001*t)) +  0.003 R*(1-exp(-0.001*t)) + -0.559 S*(1-exp(-0.01*t)) + -0.001 S*(1-exp(-0.1*t)) + -0.018 R*(1-exp(-0.1*t))
+            (R)' =  0.033 R +  0.199 S*(1-exp(-0.01*t)) + -0.070 R*(1-exp(-0.01*t)) +  0.009 R*(1-exp(-0.1*t))
+    At threshold 0.5:
+        SINDy model:
+            (S)' =  0.072 S +  0.009 R + -0.601 S*(1-exp(-0.01*t)) + -0.009 R*(1-exp(-0.1*t))
+            (R)' =  0.033 R +  0.199 S*(1-exp(-0.01*t)) + -0.070 R*(1-exp(-0.01*t)) +  0.009 R*(1-exp(-0.1*t))
+
+Github Copilot was used to reformant and fix errors in the code. However, most of the code's skeloton was written by humans, and AI was used to reformat and debug.
