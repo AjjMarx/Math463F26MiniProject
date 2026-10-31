@@ -23,12 +23,28 @@ Initially Sindy was choosing too many functions
             (R)' =  0.033 R +  0.199 S*(1-exp(-0.01*t)) + -0.070 R*(1-exp(-0.01*t)) +  0.009 R*(1-exp(-0.1*t))
 
 Comparison to the original equations
-    - Original:
-        (S)' = r_S S - d_S*(1-exp(-gamma_1*t))*S - alpha*(1-exp(-gamma_2*t))*S
-        (R)' = r_R R + alpha*(1-exp(-gamma_2*t))*S - d_R*(1-exp(-gamma_1*t))*R
+    - 0.032 Dosage - Original:
+        (S)' = 0.0532 S - 0.1855*(1-exp(-0.01*t))*S - 0.2520*(1-exp(-0.01*t))*S
+        (R)' = 0.0532 R + 0.2520*(1-exp(-0.01*t))*S - 0.0751*(1-exp(-0.01*t))*R
 
-    - SINDy Fit (Threshold 0.5):
+    - 0.032 Dosage - SINDy Fit (Threshold 0.5):
+        (S)' = 0.053 S + 0.004 R - 0.440 S*(1-exp(-0.01*t)) - 0.004 R*(1-exp(-0.1*t))
+        (R)' = 0.050 R + 0.253 S*(1-exp(-0.01*t)) - 0.075 R*(1-exp(-0.01*t)) + 0.003 R*(1-exp(-0.1*t))
+
+    - 0.32 Dosage - Original:
+        (S)' = 0.0722 S - 0.4012*(1-exp(-0.01*t))*S - 0.1963*(1-exp(-0.01*t))*S
+        (R)' = 0.0415 R + 0.1963*(1-exp(-0.01*t))*S - 0.0699*(1-exp(-0.01*t))*R
+
+    - 0.32 Dosage - SINDy Fit (Threshold 0.5):
         (S)' =  0.072 S +  0.009 R + -0.601 S*(1-exp(-0.01*t)) + -0.009 R*(1-exp(-0.1*t))
         (R)' =  0.033 R +  0.199 S*(1-exp(-0.01*t)) + -0.070 R*(1-exp(-0.01*t)) +  0.009 R*(1-exp(-0.1*t))
+
+    - 3.2 Dosage - Original:
+        (S)' = 0.0880 S - 0.6924*(1-exp(-0.01*t))*S - 0.1048*(1-exp(-0.01*t))*S
+        (R)' = 0.0070 R + 0.1048*(1-exp(-0.01*t))*S - 0.0137*(1-exp(-0.01*t))*R
+
+    - 3.2 Dosage - SINDy Fit (Threshold 0.5):
+        (S)' = 0.088 S - 0.797 S*(1-exp(-0.01*t))
+        (R)' = 0.112 S*(1-exp(-0.01*t))
 
 Github Copilot was used to reformant and fix errors in the code. However, most of the code's skeloton was written by humans, and AI was used to reformat and debug.
