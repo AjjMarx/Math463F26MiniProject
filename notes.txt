@@ -48,3 +48,4 @@ Comparison to the original equations
         (R)' = 0.112 S*(1-exp(-0.01*t))
 
 Github Copilot was used to reformant and fix errors in the code. However, most of the code's skeloton was written by humans, and AI was used to reformat and debug. Copilot was also used to help graph and plot data from the original file.
+SINDy was generally easy to use and seems to fit to the model pretty well. However, if you give it too low of a threshold and also too many variables, it seems to possibly overfit.
