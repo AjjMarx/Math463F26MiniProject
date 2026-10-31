@@ -22,4 +22,13 @@ Initially Sindy was choosing too many functions
             (S)' =  0.072 S +  0.009 R + -0.601 S*(1-exp(-0.01*t)) + -0.009 R*(1-exp(-0.1*t))
             (R)' =  0.033 R +  0.199 S*(1-exp(-0.01*t)) + -0.070 R*(1-exp(-0.01*t)) +  0.009 R*(1-exp(-0.1*t))
 
+Comparison to the original equations
+    - Original:
+        (S)' = r_S S - d_S*(1-exp(-gamma_1*t))*S - alpha*(1-exp(-gamma_2*t))*S
+        (R)' = r_R R + alpha*(1-exp(-gamma_2*t))*S - d_R*(1-exp(-gamma_1*t))*R
+
+    - SINDy Fit (Threshold 0.5):
+        (S)' =  0.072 S +  0.009 R + -0.601 S*(1-exp(-0.01*t)) + -0.009 R*(1-exp(-0.1*t))
+        (R)' =  0.033 R +  0.199 S*(1-exp(-0.01*t)) + -0.070 R*(1-exp(-0.01*t)) +  0.009 R*(1-exp(-0.1*t))
+
 Github Copilot was used to reformant and fix errors in the code. However, most of the code's skeloton was written by humans, and AI was used to reformat and debug.
