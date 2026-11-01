@@ -1,4 +1,10 @@
+Calvin:
 Learned that pysindy could run pdes!
 Using scipy to simulate differential equations
 Using Explicit Runge-Kutta method of order 5(4) to simulate the system
     - To use this, we have to estimate from the start what the population of resistant and sensitive cells are
+
+
+Alexa:
+I forked the repo to retry without AI.
+As of now, i have used scipy to run the original differential equations after I tested them in Desmos. I plotted them with matplotlib.
