@@ -3,57 +3,43 @@ import pandas as pd
 import matplotlib as mplt
 import pysindy as ps
 import matplotlib.pyplot as plt
-from scipy.integrate import itg
+import scipy.integrate as itg
 import math
 
-def loadData(file: str) -> np.NDArray:
-    return pd.read_excel(file).to_numpy()
-
 #define our cell system model for simulation
-def cellSystem(t, x):
-    #model parameters
-    r_s = 1
-    r_R = 1
-    d_s = 1
-    d_R = 1
-    a_1 = 1
-    delay_1 = 1
-    delay_2 = 1
+def cellSystem(t, state, r_s, d_s, alpha, r_r, d_r, delay) -> tuple[float, float]:
+    S = state[0]
+    R = state[1]
+    
+    dS_dt = r_s*S - d_s*(1 - math.exp(-delay*t))*S - alpha*(1 - math.exp(-delay*t))*S
+    dR_dt = r_r*R + alpha*(1 - math.exp(-delay*t))*S - d_r*(1 - math.exp(-delay*t))*R
+    return [dS_dt, dR_dt]
 
-    #dS equation. (x1)
-    dx1_dt = r_s * x1 * d_s * (1-math.e ** -(delay_1 * t)) * x1 - a_1 (1 - math.e ** - (delay_2*t)) * x1
-    #dR equation (x2)
-    dx2_dt = r_R * x2 + a_1(1 - math.e ** -(delay_2 * t)) * x1 - d_R(1-e^-(delay_1 * t)) * x2
-    return [dx1_dt, dx2_dt]
+def simulateSystem(r_s, d_s, alpha, r_r, d_r, delay) -> np.ndarray:
+    sol = itg.solve_ivp(fun = cellSystem, t_span = (0,100), y0 = [1, 0], t_eval = np.linspace(0, 100, 1000), args=(r_s, d_s, alpha, r_r, d_r, delay))
+    return sol
 
-def simulateSystem():
-    solver = itg.RK45(cellSystem, 0, [0.25,0.25], 5000, max_step=0.05)
-    soly = solver.y.reshape(1, 2)
-    #run 2000 steps on the solver
-    for i in range(2000):
-        solver.step()
-        solyn = solver.y.reshape(1, 2)
-        soly = np.concatenate((soly, solyn))
+def plotFig(fig, axs, down, sol, name):
+    axs[down].plot(sol.t, sol.y[0], label='Model: S', color='green', linestyle='--')
+    axs[down].plot(sol.t, sol.y[1], label='Model: R', color='black', linestyle=':')
+    axs[down].plot(sol.t, sol.y[0] + sol.y[1], label='Model: S+R', color='red', linestyle='-')
+    axs[down].set_title(name)
+    axs[down].set_xlabel("Time (hr)")
+    axs[down].set_ylabel("Normalized Cell Count")
+    axs[down].legend()
 
 def main():
-    dt = loadData("pcbi.1007688.s007.xlsx")
-    print(dt)
+    fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(8,8))#, shareX=True)
 
-    #Pysindy Settings
-    differentiation_method = ps.FiniteDifference(order=2)
-    feature_library = ps.PolynomialLibrary(degree=3)
+    solution3_2  = simulateSystem(0.0880, 0.6924, 0.1048, 0.0070, 0.0137, 0.01)
+    solution_32  = simulateSystem(0.0722, 0.4012, 0.1963, 0.0415, 0.0699, 0.01)
+    solution__32 = simulateSystem(0.0532, 0.1855, 0.2520, 0.0532, 0.0751, 0.01)
+    plotFig(fig, axs, 0, solution3_2, "3.2 µM")
+    plotFig(fig, axs, 1, solution_32, "0.32 µM")
+    plotFig(fig, axs, 2, solution__32, "0.032 µM")
+    plt.subplots_adjust(hspace=0.5)
+    plt.show()
 
-    #Cut off threshold for terms
-    optimizer = ps.STLSQ(threshold=0.1)
 
-    model = ps.SINDy(
-        differentiation_method=differentiation_method,
-        feature_library=feature_library,
-        optimizer=optimizer,
-    )
-    
-    #Fit pysindy model to data
-    model.fit(X, t=t, feature_names=["x", "y"])
-
-    #Print fit model equations
-    model.print()
+if __name__ == "__main__":
+    main()
