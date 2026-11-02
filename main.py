@@ -30,11 +30,10 @@ def plotFig(fig, axs, left, down, X, sol, name):
     axs[down][left].plot(X, sol[1], label='Model: R', color='black', linestyle=':')
     axs[down][left].plot(X, sol[0] + sol[1], label='Model: S+R', color='red', linestyle='-')
     axs[down][left].set_title(name)
-    if (down == 2):
+    if (down == 4):
         axs[down][left].set_xlabel("Time (hr)")
-    if (left == 0):
-        axs[down][left].set_ylabel("Normalized Cell Count")
-    #axs[down][left].legend()
+    #if (left == 0):
+        #axs[down][left].set_ylabel("Normalized Cell Count")
 
 def libraryFunctions(state) -> np.ndarray:
     return np.array([
@@ -72,32 +71,40 @@ def generateOut(states, coef) -> np.ndarray:
     return theta
 
 def main():
-    fig, axs = plt.subplots(nrows=3, ncols=5, figsize=(8,8))#, shareX=True)
+    fig, axs = plt.subplots(nrows=5, ncols=5, figsize=(8,8))#, shareX=True)
 
     solution3_2  = simulateSystem(0.0880, 0.6924, 0.1048, 0.0070, 0.0137, 0.01)
+    solutionI1   = simulateSystem(0.0800, 0.5452, 0.2244, 0.0474, 0.0725, 0.01)
     solution_32  = simulateSystem(0.0722, 0.4012, 0.1963, 0.0415, 0.0699, 0.01)
+    solutionI2   = simulateSystem(0.0626, 0.2922, 0.1511, 0.0244, 0.0421, 0.01)
     solution__32 = simulateSystem(0.0532, 0.1855, 0.2520, 0.0532, 0.0751, 0.01)
 
-    solutions = [solution3_2, solution_32, solution__32]
+    solutions = [solution3_2, solutionI1, solution_32, solutionI2, solution__32]
     alph = [0.01, 0.001, 0.0001, 0.00001, 0.000001]
+    titles = ["3.2", "Inter. #1", "0.32", "Inter. #2", "0.032"]
 
-    for j in range(3):
+    for j in range(5):
         print(solutions[j][0].y)
         print(np.vstack((solutions[j][0].y, solutions[j][0].t)))
         theta = library(np.vstack((solutions[j][0].y, solutions[j][0].t)))
         print(theta)
         for i in range(4):
-            L1Reg = Lasso(alpha = alph[i], fit_intercept=False, max_iter=10000) 
+            L1Reg = Lasso(alpha = alph[i], fit_intercept=False, max_iter=10000)
             L1Reg.fit(theta, solutions[j][1])
             dat = generateOut(np.vstack((solutions[j][0].y, solutions[j][0].t)), L1Reg.coef_)
-            plotFig(fig, axs, i + 1, j, solutions[j][0].t, dat.T, "3.2 µM, Reg. " + str(alph[i]))
+            plotFig(fig, axs, i + 1, j, solutions[j][0].t, dat.T, titles[j] + " µM, Reg. " + str(alph[i]))
 
 
     plotFig(fig, axs, 0, 0, solution3_2[0].t, solution3_2[0].y, "Original 3.2 µM")
-    plotFig(fig, axs, 0, 1, solution_32[0].t, solution_32[0].y, "Original 0.32 µM")
-    plotFig(fig, axs, 0, 2, solution__32[0].t, solution__32[0].y, "Original 0.032 µM")
+    plotFig(fig, axs, 0, 1, solutionI1[0].t, solutionI1[0].y, "Original Inter. #1")
+    plotFig(fig, axs, 0, 2, solution_32[0].t, solution_32[0].y, "Original 0.32 µM")
+    plotFig(fig, axs, 0, 3, solutionI2[0].t, solutionI2[0].y, "Original Inter. #2")
+    plotFig(fig, axs, 0, 4, solution__32[0].t, solution__32[0].y, "Original 0.032 µM")
     plt.subplots_adjust(hspace=0.5)
     plt.subplots_adjust(wspace=0.25)
+    fig.supylabel("Normalized Cell Count")
+    fig.suptitle("Original Systems with L1-Regularized SINDy Results")
+    plt.tight_layout()
     plt.show()
 
 
