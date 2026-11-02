@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 import scipy.integrate as itg
 import math
 from sklearn.linear_model import Lasso
+import warnings
+from sklearn.exceptions import ConvergenceWarning
+warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 #define our cell system model for simulation
 def cellSystem(t, state, r_s, d_s, alpha, r_r, d_r, delay) -> tuple[float, float]:
@@ -103,6 +106,8 @@ def main():
             L1Reg.fit(theta, solutions[j][1])
             dat = generateOut(np.vstack((solutions[j][0].y, solutions[j][0].t)), L1Reg.coef_)
             plotFig(fig, axs, i + 1, j, solutions[j][0].t, dat.T, titles[j] + " µM, Reg. " + str(alph[i]))
+            print(titles[j] + " µM, Reg. " + str(alph[i]) + " coefficients:")
+            print(L1Reg.coef_)
 
 
     plotFig(fig, axs, 0, 0, solution3_2[0].t, solution3_2[0].y, "Original 3.2 µM")
