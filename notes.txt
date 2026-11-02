@@ -8,3 +8,7 @@ Using Explicit Runge-Kutta method of order 5(4) to simulate the system
 Alexa:
 I forked the repo to retry without AI.
 As of now, i have used scipy to run the original differential equations after I tested them in Desmos. I plotted them with matplotlib.
+
+Implemented a function to generate library array
+
+Implemented the SINDy with L1-regularization
