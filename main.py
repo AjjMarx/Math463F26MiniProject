@@ -18,11 +18,11 @@ def cellSystem(t, state, r_s, d_s, alpha, r_r, d_r, delay) -> tuple[float, float
 
 def simulateSystem(r_s, d_s, alpha, r_r, d_r, delay) -> tuple(np.ndarray, np.ndarray):
     sol = itg.solve_ivp(fun = cellSystem, t_span = (0,100), y0 = [1, 0], t_eval = np.linspace(0, 100, 1000), args=(r_s, d_s, alpha, r_r, d_r, delay))
-    div = np.zeros((1000, 2))
+    div = np.zeros((1000, 3))
     for i in range(1000):
         #print(sol.y.T[i])
-        div[i] = cellSystem(sol.t[i], sol.y.T[i], r_s, d_s, alpha, r_r, d_r, delay)
-
+        s = cellSystem(sol.t[i], sol.y.T[i], r_s, d_s, alpha, r_r, d_r, delay)
+        div[i] = [s[0], s[1], 0.1]
     return (sol, div)
 
 def plotFig(fig, axs, left, down, X, sol, name):
@@ -30,8 +30,10 @@ def plotFig(fig, axs, left, down, X, sol, name):
     axs[down][left].plot(X, sol[1], label='Model: R', color='black', linestyle=':')
     axs[down][left].plot(X, sol[0] + sol[1], label='Model: S+R', color='red', linestyle='-')
     axs[down][left].set_title(name)
-    axs[down][left].set_xlabel("Time (hr)")
-    axs[down][left].set_ylabel("Normalized Cell Count")
+    if (down == 2):
+        axs[down][left].set_xlabel("Time (hr)")
+    if (left == 0):
+        axs[down][left].set_ylabel("Normalized Cell Count")
     #axs[down][left].legend()
 
 def libraryFunctions(state) -> np.ndarray:
@@ -44,13 +46,13 @@ def libraryFunctions(state) -> np.ndarray:
             math.exp(state[0])*state[0],
             math.exp(state[1])*state[0],
             math.exp(state[0])*state[1],
-            math.exp(state[1])*state[1]#,
-            #math.cos(100*state[0])
+            math.exp(state[1])*state[1],
+            math.exp(state[2])
             ])
 
 def library(states) -> np.ndarray:
     length = states.shape[1]
-    functionCount = libraryFunctions([0, 0]).shape[0]
+    functionCount = libraryFunctions([0, 0, 0]).shape[0]
     theta = np.zeros((length, functionCount))
     for i in range(length):
         theta[i] = libraryFunctions(states.T[i])
@@ -80,18 +82,22 @@ def main():
     alph = [0.01, 0.001, 0.0001, 0.00001, 0.000001]
 
     for j in range(3):
-        theta = library(solutions[j][0].y)
+        print(solutions[j][0].y)
+        print(np.vstack((solutions[j][0].y, solutions[j][0].t)))
+        theta = library(np.vstack((solutions[j][0].y, solutions[j][0].t)))
+        print(theta)
         for i in range(4):
             L1Reg = Lasso(alpha = alph[i], fit_intercept=False, max_iter=10000) 
             L1Reg.fit(theta, solutions[j][1])
-            dat = generateOut(solution3_2[0].y, L1Reg.coef_)
-            plotFig(fig, axs, i + 1, j, solutions[j][0].t, dat.T, "3.2 µM " + str(alph[i]))
+            dat = generateOut(np.vstack((solutions[j][0].y, solutions[j][0].t)), L1Reg.coef_)
+            plotFig(fig, axs, i + 1, j, solutions[j][0].t, dat.T, "3.2 µM, Reg. " + str(alph[i]))
 
 
-    plotFig(fig, axs, 0, 0, solution3_2[0].t, solution3_2[0].y, "3.2 µM")
-    plotFig(fig, axs, 0, 1, solution_32[0].t, solution_32[0].y, "0.32 µM")
-    plotFig(fig, axs, 0, 2, solution__32[0].t, solution__32[0].y, "0.032 µM")
+    plotFig(fig, axs, 0, 0, solution3_2[0].t, solution3_2[0].y, "Original 3.2 µM")
+    plotFig(fig, axs, 0, 1, solution_32[0].t, solution_32[0].y, "Original 0.32 µM")
+    plotFig(fig, axs, 0, 2, solution__32[0].t, solution__32[0].y, "Original 0.032 µM")
     plt.subplots_adjust(hspace=0.5)
+    plt.subplots_adjust(wspace=0.25)
     plt.show()
 
 
