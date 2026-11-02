@@ -40,13 +40,23 @@ def libraryFunctions(state) -> np.ndarray:
             1,
             state[0],
             state[1],
+            state[2],
+            state[0]*state[1],
+            state[0]*state[2],
+            state[0]*state[1],
             math.exp(state[0]),
             math.exp(state[1]),
             math.exp(state[0])*state[0],
             math.exp(state[1])*state[0],
             math.exp(state[0])*state[1],
             math.exp(state[1])*state[1],
-            math.exp(state[2])
+            math.exp(state[2]),
+            math.exp(state[2])*state[0],
+            math.exp(state[2])*state[1],
+            math.exp(state[2])*state[2],
+            math.cos(state[2]),
+            math.cos(state[2]/10.0),
+            math.cos(state[2]/100.0),
             ])
 
 def library(states) -> np.ndarray:
@@ -100,13 +110,12 @@ def main():
     plotFig(fig, axs, 0, 2, solution_32[0].t, solution_32[0].y, "Original 0.32 µM")
     plotFig(fig, axs, 0, 3, solutionI2[0].t, solutionI2[0].y, "Original Inter. #2")
     plotFig(fig, axs, 0, 4, solution__32[0].t, solution__32[0].y, "Original 0.032 µM")
-    plt.subplots_adjust(hspace=0.5)
+    plt.subplots_adjust(hspace=0.75)
     plt.subplots_adjust(wspace=0.25)
     fig.supylabel("Normalized Cell Count")
     fig.suptitle("Original Systems with L1-Regularized SINDy Results")
-    plt.tight_layout()
+    #plt.tight_layout()
     plt.show()
-
 
 if __name__ == "__main__":
     main()
