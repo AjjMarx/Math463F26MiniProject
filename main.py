@@ -25,14 +25,14 @@ def simulateSystem(r_s, d_s, alpha, r_r, d_r, delay) -> tuple(np.ndarray, np.nda
 
     return (sol, div)
 
-def plotFig(fig, axs, down, sol, name):
-    axs[down].plot(sol.t, sol.y[0], label='Model: S', color='green', linestyle='--')
-    axs[down].plot(sol.t, sol.y[1], label='Model: R', color='black', linestyle=':')
-    axs[down].plot(sol.t, sol.y[0] + sol.y[1], label='Model: S+R', color='red', linestyle='-')
-    axs[down].set_title(name)
-    axs[down].set_xlabel("Time (hr)")
-    axs[down].set_ylabel("Normalized Cell Count")
-    axs[down].legend()
+def plotFig(fig, axs, left, down, X, sol, name):
+    axs[down][left].plot(X, sol[0], label='Model: S', color='green', linestyle='--')
+    axs[down][left].plot(X, sol[1], label='Model: R', color='black', linestyle=':')
+    axs[down][left].plot(X, sol[0] + sol[1], label='Model: S+R', color='red', linestyle='-')
+    axs[down][left].set_title(name)
+    axs[down][left].set_xlabel("Time (hr)")
+    axs[down][left].set_ylabel("Normalized Cell Count")
+    #axs[down][left].legend()
 
 def libraryFunctions(state) -> np.ndarray:
     return np.array([
@@ -44,7 +44,8 @@ def libraryFunctions(state) -> np.ndarray:
             math.exp(state[0])*state[0],
             math.exp(state[1])*state[0],
             math.exp(state[0])*state[1],
-            math.exp(state[1])*state[1]
+            math.exp(state[1])*state[1]#,
+            #math.cos(100*state[0])
             ])
 
 def library(states) -> np.ndarray:
@@ -56,24 +57,40 @@ def library(states) -> np.ndarray:
 
     return theta
 
+def generateOut(states, coef) -> np.ndarray:
+    length = states.shape[1]
+    varCount = coef.shape[0]
+    theta = np.zeros((length, varCount))
+    theta[0][0] = 1
+    theta[0][1] = 0
+    for i in range(1, length):
+        for j in range(varCount):
+            theta[i][j] = theta[i-1][j] + 0.1*np.dot(libraryFunctions(states.T[i]), coef[j])
+
+    return theta
 
 def main():
-    fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(8,8))#, shareX=True)
+    fig, axs = plt.subplots(nrows=3, ncols=5, figsize=(8,8))#, shareX=True)
 
     solution3_2  = simulateSystem(0.0880, 0.6924, 0.1048, 0.0070, 0.0137, 0.01)
     solution_32  = simulateSystem(0.0722, 0.4012, 0.1963, 0.0415, 0.0699, 0.01)
     solution__32 = simulateSystem(0.0532, 0.1855, 0.2520, 0.0532, 0.0751, 0.01)
 
-    theta = library(solution3_2[0].y)
-    print(solution3_2[1])
-    
-    #L1Reg = Lasso(alpha = 0.01, fit_intercept=False, max_iter=10000) 
-    #l1Reg.fit(Theta, div)
+    solutions = [solution3_2, solution_32, solution__32]
+    alph = [0.01, 0.001, 0.0001, 0.00001, 0.000001]
 
-    plotFig(fig, axs, 0, solution3_2[0], "3.2 µM")
-    axs[0].plot(solution3_2[0].t, 10*solution3_2[1].T[0], label='Model: S', color='green', linestyle='-')
-    plotFig(fig, axs, 1, solution_32[0], "0.32 µM")
-    plotFig(fig, axs, 2, solution__32[0], "0.032 µM")
+    for j in range(3):
+        theta = library(solutions[j][0].y)
+        for i in range(4):
+            L1Reg = Lasso(alpha = alph[i], fit_intercept=False, max_iter=10000) 
+            L1Reg.fit(theta, solutions[j][1])
+            dat = generateOut(solution3_2[0].y, L1Reg.coef_)
+            plotFig(fig, axs, i + 1, j, solutions[j][0].t, dat.T, "3.2 µM " + str(alph[i]))
+
+
+    plotFig(fig, axs, 0, 0, solution3_2[0].t, solution3_2[0].y, "3.2 µM")
+    plotFig(fig, axs, 0, 1, solution_32[0].t, solution_32[0].y, "0.32 µM")
+    plotFig(fig, axs, 0, 2, solution__32[0].t, solution__32[0].y, "0.032 µM")
     plt.subplots_adjust(hspace=0.5)
     plt.show()
 
