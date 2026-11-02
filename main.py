@@ -46,7 +46,7 @@ def libraryFunctions(state) -> np.ndarray:
             state[2],
             state[0]*state[1],
             state[0]*state[2],
-            state[0]*state[1],
+            state[1]*state[2],
             math.exp(state[0]),
             math.exp(state[1]),
             math.exp(state[0])*state[0],
@@ -61,6 +61,28 @@ def libraryFunctions(state) -> np.ndarray:
             math.cos(state[2]/10.0),
             math.cos(state[2]/100.0),
             ])
+
+libraryStrings = ["(1)", 
+                  "(S)", 
+                  "(R)", 
+                  "(t)", 
+                  "(SR)",
+                  "(St)",
+                  "(Rt)",
+                  "(e^S)",
+                  "(e^R)",
+                  "(Se^S)",
+                  "(Se^R)",
+                  "(Re^S)",
+                  "(Re^R)",
+                  "(e^t)",
+                  "(Se^t)",
+                  "(Re^t)",
+                  "(te^t)",
+                  "(cos(t))",
+                  "(cos(t/10))",
+                  "(cos(t/100))"
+                  ]
 
 def library(states) -> np.ndarray:
     length = states.shape[1]
@@ -96,18 +118,27 @@ def main():
     alph = [0.01, 0.001, 0.0001, 0.00001, 0.000001]
     titles = ["3.2", "Inter. #1", "0.32", "Inter. #2", "0.032"]
 
+    np.set_printoptions(suppress=True)
     for j in range(5):
-        print(solutions[j][0].y)
-        print(np.vstack((solutions[j][0].y, solutions[j][0].t)))
         theta = library(np.vstack((solutions[j][0].y, solutions[j][0].t)))
-        print(theta)
         for i in range(4):
             L1Reg = Lasso(alpha = alph[i], fit_intercept=False, max_iter=10000)
             L1Reg.fit(theta, solutions[j][1])
+            L1Reg.coef_[np.abs(L1Reg.coef_) < 0.00001] = 0.0
             dat = generateOut(np.vstack((solutions[j][0].y, solutions[j][0].t)), L1Reg.coef_)
             plotFig(fig, axs, i + 1, j, solutions[j][0].t, dat.T, titles[j] + " µM, Reg. " + str(alph[i]))
             print(titles[j] + " µM, Reg. " + str(alph[i]) + " coefficients:")
-            print(L1Reg.coef_)
+            #print(L1Reg.coef_)
+            print("S' = ")
+            for k in range(len(libraryStrings)):
+                if math.fabs(L1Reg.coef_[0][k]) >= 0.0001:
+                    print(f"{L1Reg.coef_[0][k]:.5f}" + libraryStrings[k]  + " + ", end="")
+            print("")
+            print("R' = ")
+            for k in range(len(libraryStrings)):
+                if math.fabs(L1Reg.coef_[1][k]) >= 0.0001:
+                    print(f"{L1Reg.coef_[1][k]:.5f}"+ libraryStrings[k]  + " + ", end="")
+            print("")
 
 
     plotFig(fig, axs, 0, 0, solution3_2[0].t, solution3_2[0].y, "Original 3.2 µM")
