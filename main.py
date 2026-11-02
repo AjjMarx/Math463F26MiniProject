@@ -28,12 +28,38 @@ def plotFig(fig, axs, down, sol, name):
     axs[down].set_ylabel("Normalized Cell Count")
     axs[down].legend()
 
+def libraryFunctions(state) -> np.ndarray:
+    return np.array([
+            1,
+            state[0],
+            state[1],
+            math.exp(state[0]),
+            math.exp(state[1]),
+            math.exp(state[0])*state[0],
+            math.exp(state[1])*state[0],
+            math.exp(state[0])*state[1],
+            math.exp(state[1])*state[1]
+            ])
+
+def library(states) -> np.ndarray:
+    length = states.shape[1]
+    functionCount = libraryFunctions([0, 0]).shape[0]
+    theta = np.zeros((length, functionCount))
+    for i in range(length):
+        theta[i] = libraryFunctions(states.T[i])
+
+    return theta
+
 def main():
     fig, axs = plt.subplots(nrows=3, ncols=1, figsize=(8,8))#, shareX=True)
 
     solution3_2  = simulateSystem(0.0880, 0.6924, 0.1048, 0.0070, 0.0137, 0.01)
     solution_32  = simulateSystem(0.0722, 0.4012, 0.1963, 0.0415, 0.0699, 0.01)
     solution__32 = simulateSystem(0.0532, 0.1855, 0.2520, 0.0532, 0.0751, 0.01)
+
+    print(library(solution3_2.y))
+    
+
     plotFig(fig, axs, 0, solution3_2, "3.2 µM")
     plotFig(fig, axs, 1, solution_32, "0.32 µM")
     plotFig(fig, axs, 2, solution__32, "0.032 µM")
